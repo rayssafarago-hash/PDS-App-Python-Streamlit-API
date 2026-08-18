@@ -59,3 +59,15 @@ def montar_alternativas(pergunta):
     random.shuffle(alternativas)
 
     return alternativas
+
+if st.sidebar.button("Iniciar Quiz"):
+
+    perguntas = buscar_perguntas(
+        quantidade,
+        categoria[1],
+        dificuldade
+    )
+
+    st.session_state["perguntas"] = perguntas
+
+    st.session_state["respostas"] = {}
