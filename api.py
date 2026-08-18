@@ -61,56 +61,98 @@ def montar_alternativas(pergunta):
 
     return alternativas
 
-if st.sidebar.button("Iniciar Quiz"):
 
+
+if st.sidebar.button("Iniciar Quiz"):
     perguntas = buscar_perguntas(
         quantidade,
         categoria[1],
         dificuldade
     )
-
     st.session_state["perguntas"] = perguntas
-
+    st.session_state["alternativas"] = [
+        montar_alternativas(pergunta)
+        for pergunta in perguntas
+    ]
     st.session_state["respostas"] = {}
 
 
 if "perguntas" not in st.session_state or not st.session_state["perguntas"]:
-
     st.info(
         "Configure o quiz na barra lateral e clique em Iniciar Quiz."
     )
-
-
     st.stop()
 
 
-
 perguntas = st.session_state["perguntas"]
-
 respostas = st.session_state["respostas"]
+alternativas_salvas = st.session_state["alternativas"]
+
 
 for i, pergunta in enumerate(perguntas):
-
     texto = html.unescape(pergunta["question"])
-
-    alternativas = montar_alternativas(pergunta)
-
     alternativas = [
-        html.unescape(a) for a in alternativas
+        html.unescape(a)
+        for a in alternativas_salvas[i]
     ]
-
     st.subheader(
         f"Pergunta {i + 1} de {len(perguntas)}"
     )
-    
     st.write(texto)
-
     escolha = st.radio(
         "Escolha uma alternativa:",
         options=alternativas,
         key=f"q{i}"
     )
-
     respostas[i] = escolha
-
     st.divider()
+
+
+if st.button(" Ver resultado"):
+    corretas = 0
+    for i, pergunta in enumerate(perguntas):
+        gabarito = html.unescape(
+            pergunta["correct_answer"]
+        )
+        escolha = respostas.get(i)
+        if escolha == gabarito:
+            corretas += 1
+
+    st.metric(
+        "Pontuação",
+        f"{corretas}/{len(perguntas)}"
+    )
+    percentual = corretas / len(perguntas)
+    mensagens = {
+        "excelente": "✨✨Arrasou divo! Você divou!✨✨",
+        "bom": "Tá bom, mas dá para melhorar! Você não divou totalmente ainda 🤡",
+        "tente_novamente": "Péssimo você é um labubu!"
+    }
+    if percentual >= 0.8:
+        st.success(
+            mensagens["excelente"]
+        )
+    elif percentual >= 0.5:
+        st.info(
+            mensagens["bom"]
+        )
+    else:
+        st.warning(
+            mensagens["tente_novamente"]
+        )
+
+    st.subheader("Gabarito")
+    for i, pergunta in enumerate(perguntas):
+        gabarito = html.unescape(
+            pergunta["correct_answer"]
+        )
+        escolha = respostas.get(i)
+        if escolha == gabarito:
+            st.success(
+                f"Pergunta {i + 1}: correta!"
+            )
+        else:
+            st.error(
+                f"Pergunta {i + 1}: errada. "
+                f"Resposta correta: {gabarito}"
+            )
