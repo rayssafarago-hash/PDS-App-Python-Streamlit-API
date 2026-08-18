@@ -4,10 +4,12 @@ import random
 import html
 
 st.set_page_config(page_title="Quiz Python")
+
 st.title("Quiz com Python")
 st.caption("Powered by Open Trivia Database")
 
 st.sidebar.header("⚙️ Configurações")
+
 
 quantidade = st.sidebar.slider(
     "Número de perguntas",
@@ -15,6 +17,7 @@ quantidade = st.sidebar.slider(
     10,
     5
 )
+
 
 categoria = st.sidebar.selectbox(
     "Categoria",
@@ -28,25 +31,56 @@ categoria = st.sidebar.selectbox(
     format_func=lambda x: x[0]
 )
 
+
 dificuldade = st.sidebar.selectbox(
     "Dificuldade",
     ["easy", "medium", "hard"]
 )
 
+
+
 def buscar_perguntas(quantidade, categoria_id, dificuldade):
-    url = "https://opentdb.com/api.php"
 
-    params = {
-        "amount": quantidade,
-        "category": categoria_id,
-        "difficulty": dificuldade,
-        "type": "multiple"
-    }
-    resposta = requests.get(url, params=params)
+    url = (
+        f"https://opentdb.com/api.php?"
+        f"amount={quantidade}"
+        f"&category={categoria_id}"
+        f"&difficulty={dificuldade}"
+        f"&type=multiple"
+    )
 
-    dados = resposta.json()
+    try:
+       
+        resposta = requests.get(
+            url,
+            timeout=10
+        )
 
-    return dados["results"]
+
+        if resposta.status_code != 200:
+            return None
+
+    
+        dados = resposta.json()
+
+       
+        if dados.get("response_code") != 0:
+            return None
+
+        
+        if not dados.get("results"):
+            return None
+
+        return dados["results"]
+
+    
+    except requests.RequestException:
+        return None
+
+    
+    except ValueError:
+        return None
+
 
 
 def montar_alternativas(pergunta):
@@ -57,6 +91,7 @@ def montar_alternativas(pergunta):
 
     alternativas = [correta] + erradas
 
+   
     random.shuffle(alternativas)
 
     return alternativas
@@ -64,94 +99,160 @@ def montar_alternativas(pergunta):
 
 
 if st.sidebar.button("Iniciar Quiz"):
+
     perguntas = buscar_perguntas(
         quantidade,
         categoria[1],
         dificuldade
     )
-    st.session_state["perguntas"] = perguntas
-    st.session_state["alternativas"] = [
-        montar_alternativas(pergunta)
-        for pergunta in perguntas
-    ]
-    st.session_state["respostas"] = {}
+
+    
+    if perguntas is None:
+
+        st.error(
+            "Não foi possível carregar as perguntas. "
+            "Verifique sua conexão ou tente novamente."
+        )
+
+    else:
+
+        st.session_state["perguntas"] = perguntas
+
+        st.session_state["alternativas"] = [
+            montar_alternativas(pergunta)
+            for pergunta in perguntas
+        ]
+
+        st.session_state["respostas"] = {}
 
 
-if "perguntas" not in st.session_state or not st.session_state["perguntas"]:
+
+if (
+    "perguntas" not in st.session_state
+    or not st.session_state["perguntas"]
+):
+
     st.info(
-        "Configure o quiz na barra lateral e clique em Iniciar Quiz."
+        "Configure o quiz na barra lateral "
+        "e clique em Iniciar Quiz."
     )
+
     st.stop()
 
 
 perguntas = st.session_state["perguntas"]
+
 respostas = st.session_state["respostas"]
+
 alternativas_salvas = st.session_state["alternativas"]
 
 
 for i, pergunta in enumerate(perguntas):
-    texto = html.unescape(pergunta["question"])
+
+    texto = html.unescape(
+        pergunta["question"]
+    )
+
     alternativas = [
         html.unescape(a)
         for a in alternativas_salvas[i]
     ]
+
     st.subheader(
         f"Pergunta {i + 1} de {len(perguntas)}"
     )
+
     st.write(texto)
+
     escolha = st.radio(
         "Escolha uma alternativa:",
         options=alternativas,
         key=f"q{i}"
     )
+
     respostas[i] = escolha
+
     st.divider()
 
 
-if st.button(" Ver resultado"):
+if st.button("Ver resultado"):
+
     corretas = 0
+
     for i, pergunta in enumerate(perguntas):
+
         gabarito = html.unescape(
             pergunta["correct_answer"]
         )
+
         escolha = respostas.get(i)
+
         if escolha == gabarito:
             corretas += 1
 
+
+    
     st.metric(
         "Pontuação",
         f"{corretas}/{len(perguntas)}"
     )
+
+
     percentual = corretas / len(perguntas)
+
+
+    
     mensagens = {
-        "excelente": "✨✨Arrasou divo! Você divou!✨✨",
-        "bom": "Tá bom, mas dá para melhorar! Você não divou totalmente ainda 🤡",
-        "tente_novamente": "Péssimo você é um labubu!"
+        "excelente":
+            "✨✨ Arrasou divo(a)! Você divou! ✨✨",
+
+        "bom":
+            "Tá bom, mas dá para melhorar! Você não divou totalmente ainda 🤡",
+
+        "tente_novamente":
+            "Péssimo você é um labubu!"
     }
+
+
     if percentual >= 0.8:
+
         st.success(
             mensagens["excelente"]
         )
+
     elif percentual >= 0.5:
+
         st.info(
             mensagens["bom"]
         )
+
     else:
+
         st.warning(
             mensagens["tente_novamente"]
         )
 
+
     st.subheader("Gabarito")
+
+
     for i, pergunta in enumerate(perguntas):
+
         gabarito = html.unescape(
             pergunta["correct_answer"]
         )
+
         escolha = respostas.get(i)
+
+
         if escolha == gabarito:
+
             st.success(
                 f"Pergunta {i + 1}: correta!"
             )
+
         else:
+
             st.error(
                 f"Pergunta {i + 1}: errada. "
                 f"Resposta correta: {gabarito}"
