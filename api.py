@@ -1,6 +1,7 @@
 import streamlit as st
 import requests
 import random
+import html
 
 st.set_page_config(page_title="Quiz Python")
 st.title("Quiz com Python")
@@ -71,3 +72,45 @@ if st.sidebar.button("Iniciar Quiz"):
     st.session_state["perguntas"] = perguntas
 
     st.session_state["respostas"] = {}
+
+
+if "perguntas" not in st.session_state or not st.session_state["perguntas"]:
+
+    st.info(
+        "Configure o quiz na barra lateral e clique em Iniciar Quiz."
+    )
+
+
+    st.stop()
+
+
+
+perguntas = st.session_state["perguntas"]
+
+respostas = st.session_state["respostas"]
+
+for i, pergunta in enumerate(perguntas):
+
+    texto = html.unescape(pergunta["question"])
+
+    alternativas = montar_alternativas(pergunta)
+
+    alternativas = [
+        html.unescape(a) for a in alternativas
+    ]
+
+    st.subheader(
+        f"Pergunta {i + 1} de {len(perguntas)}"
+    )
+    
+    st.write(texto)
+
+    escolha = st.radio(
+        "Escolha uma alternativa:",
+        options=alternativas,
+        key=f"q{i}"
+    )
+
+    respostas[i] = escolha
+
+    st.divider()
