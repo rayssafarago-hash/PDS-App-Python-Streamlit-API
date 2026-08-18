@@ -210,7 +210,7 @@ if st.button("Ver resultado"):
             "Tá bom, mas dá para melhorar! Você não divou totalmente ainda 🤡",
 
         "tente_novamente":
-            "Péssimo você é um labubu!"
+            "Péssimo você é um labubu!😝"
     }
 
 
