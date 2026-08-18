@@ -44,5 +44,18 @@ def buscar_perguntas(quantidade, categoria_id, dificuldade):
     resposta = requests.get(url, params=params)
 
     dados = resposta.json()
-    
+
     return dados["results"]
+
+
+def montar_alternativas(pergunta):
+
+    correta = pergunta["correct_answer"]
+
+    erradas = pergunta["incorrect_answers"]
+
+    alternativas = [correta] + erradas
+
+    random.shuffle(alternativas)
+
+    return alternativas
