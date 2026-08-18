@@ -31,3 +31,18 @@ dificuldade = st.sidebar.selectbox(
     "Dificuldade",
     ["easy", "medium", "hard"]
 )
+
+def buscar_perguntas(quantidade, categoria_id, dificuldade):
+    url = "https://opentdb.com/api.php"
+
+    params = {
+        "amount": quantidade,
+        "category": categoria_id,
+        "difficulty": dificuldade,
+        "type": "multiple"
+    }
+    resposta = requests.get(url, params=params)
+
+    dados = resposta.json()
+    
+    return dados["results"]
